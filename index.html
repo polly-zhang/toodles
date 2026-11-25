@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Very Important Question</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=DM+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one centered card per step; each bridesmaid swaps the theme tokens. */
+  :root {
+    --bg: #f3f6fb; --ink: #1d2433; --muted: #5c6577; --card: #ffffff;
+    --accent: #3b5bdb; --accent-ink: #ffffff; --line: #d8deea; --soft: #e8edf7;
+    --display: "Bricolage Grotesque", system-ui, sans-serif;
+    --mono: "DM Mono", ui-monospace, Menlo, monospace;
+    color-scheme: light;
+  }
+  /* Hanna: pharmacy label meets llama wool */
+  body[data-theme-name="hanna"] {
+    --bg: #e6f4ef; --ink: #13302a; --muted: #4d6b63; --card: #ffffff;
+    --accent: #0f8a6c; --accent-ink: #ffffff; --line: #bcdcd1; --soft: #f4e9dc;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 var(--display);
+    padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    display: grid; place-items: center; overflow-x: hidden;
+    transition: background .6s ease;
+  }
+  .card {
+    width: 100%; max-width: 440px; background: var(--card);
+    border: 2px solid var(--ink); border-radius: 18px;
+    box-shadow: 6px 6px 0 var(--ink); padding: 28px 22px;
+    display: grid; gap: 18px; position: relative;
+  }
+  h1, h2 { margin: 0; line-height: 1.1; text-wrap: balance; }
+  h1 { font-size: clamp(1.9rem, 7vw, 2.4rem); font-weight: 800; }
+  h2 { font-size: 1.4rem; font-weight: 800; }
+  p { margin: 0; color: var(--muted); }
+  label { font-weight: 600; font-size: .95rem; display: grid; gap: 6px; }
+  input, select {
+    font: inherit; font-size: 16px; padding: 12px 14px; border-radius: 10px;
+    border: 2px solid var(--line); background: var(--card); color: var(--ink); width: 100%;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  button {
+    font: inherit; font-weight: 800; font-size: 1.05rem; cursor: pointer;
+    padding: 14px 22px; border-radius: 999px; border: 2px solid var(--ink);
+    background: var(--accent); color: var(--accent-ink); box-shadow: 3px 3px 0 var(--ink);
+    transition: transform .15s ease;
+  }
+  button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .ghost { background: var(--card); color: var(--ink); }
+  .error { color: #c0392b; font-weight: 600; min-height: 1.5em; }
+  [hidden] { display: none !important; }
+
+  /* --- Hanna: prescription label --- */
+  .rx-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: .75rem; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--muted);
+    border-bottom: 2px dashed var(--line); padding-bottom: 10px;
+  }
+  .rx-head b { font-size: 1.6rem; color: var(--accent); font-family: var(--display); }
+  .rx-table { font-family: var(--mono); font-size: .85rem; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; }
+  .rx-table dt { color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .rx-table dd { margin: 0; color: var(--ink); }
+  .warning {
+    background: #ffd84d; color: #2b2200; border: 2px solid #2b2200; border-radius: 8px;
+    font-family: var(--mono); font-size: .78rem; padding: 8px 10px; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .llama { font-size: 4rem; line-height: 1; text-align: center; display: block; animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+
+  .choices { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; min-height: 64px; align-items: center; }
+  #yesBtn { transition: transform .25s ease, font-size .25s ease; }
+  #noBtn { background: var(--card); color: var(--ink); transition: transform .2s ease, left .25s ease, top .25s ease; }
+  #noBtn.loose { position: fixed; z-index: 20; }
+  .taunt { text-align: center; font-family: var(--mono); font-size: .85rem; min-height: 1.4em; color: var(--accent); }
+
+  .floaty { position: fixed; pointer-events: none; font-size: 2rem; z-index: 30; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+  .spit { position: fixed; pointer-events: none; z-index: 25; font-size: 1.6rem; animation: spit .7s ease-out forwards; }
+  @keyframes spit { from { opacity: 1; transform: translate(0,0) scale(.6); } to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.4); } }
+
+  .summary { font-family: var(--mono); font-size: .85rem; background: var(--soft); border-radius: 10px; padding: 12px 14px; white-space: pre-wrap; color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .llama, .floaty, .spit { animation: none; }
+    #noBtn, #yesBtn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Step 1: password -->
+<form class="card" id="gate" autocomplete="off">
+  <h1>Psst. This one's just for you.</h1>
+  <p>Enter your first name to unlock your message.</p>
+  <label for="pw">Your first name
+    <input id="pw" name="pw" type="text" autocapitalize="words" autocomplete="off" spellcheck="false" placeholder="e.g. Hanna">
+  </label>
+  <div class="error" id="gateErr" role="alert"></div>
+  <button type="submit">Unlock</button>
+</form>
+
+<!-- Steps 2-4 are rendered per bridesmaid -->
+<main id="stage" hidden></main>
+
+<script>
+/* ============================================================
+   SETTINGS
+   Put your email here (FormSubmit sends the answers to it).
+   After the first submission, FormSubmit emails you a one-time
+   "Activate" link — click it, and you'll get a private alias you
+   can paste here instead of your raw email.
+   Leave empty to skip emailing (they'll see a screenshot card).
+   ============================================================ */
+const SEND_TO = "";
+const BRIDE = "Polly";
+
+/* ============================================================
+   BRIDESMAIDS — key is the lowercase name (the password).
+   ============================================================ */
+const BRIDESMAIDS = {
+  hanna: {
+    name: "Hanna",
+    theme: "hanna",
+    render: renderHanna,
+  },
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+function h(html) { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+function rain(chars, n = 40) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement("span");
+    s.className = "floaty";
+    s.textContent = chars[i % chars.length];
+    s.style.left = Math.random() * 100 + "vw";
+    s.style.top = -10 - Math.random() * 30 + "vh";
+    s.style.animationDuration = 2 + Math.random() * 2.5 + "s";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 5000);
+  }
+}
+
+/* ---------- password gate ---------- */
+$("#gate").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const key = $("#pw").value.trim().toLowerCase().replace(/\s+/g, " ");
+  const bm = BRIDESMAIDS[key];
+  if (!bm) { $("#gateErr").textContent = "Hmm, that's not on the list. Check the spelling?"; return; }
+  $("#gate").hidden = true;
+  document.body.dataset.themeName = bm.theme;
+  const stage = $("#stage");
+  stage.hidden = false;
+  bm.render(stage, bm);
+});
+
+/* ---------- shared: the questionnaire ---------- */
+function questionnaire(stage, bm, copy) {
+  stage.innerHTML = "";
+  const form = h(`
+    <form class="card" id="sizes">
+      ${copy.header || ""}
+      <h2>${copy.title}</h2>
+      <p>${copy.intro}</p>
+      <label for="q_colour">Favourite colour
+        <input id="q_colour" name="favourite_colour" required placeholder="e.g. sage green">
+      </label>
+      <label for="q_shoe">Shoe size
+        <input id="q_shoe" name="shoe_size" required inputmode="decimal" placeholder="e.g. US 7.5 / UK 5">
+      </label>
+      <label for="q_clothes">Clothing size
+        <select id="q_clothes" name="clothing_size" required>
+          <option value="">Pick one</option>
+          <option>XXS</option><option>XS</option><option>S</option><option>M</option>
+          <option>L</option><option>XL</option><option>XXL</option><option>3XL</option>
+        </select>
+      </label>
+      <label for="q_dress">Dress size (if you know it)
+        <input id="q_dress" name="dress_size" placeholder="e.g. US 6 / UK 10">
+      </label>
+      <label for="q_extra">${copy.extraLabel}
+        <input id="q_extra" name="${copy.extraName}" placeholder="${copy.extraPlaceholder}">
+      </label>
+      <div class="error" id="formErr" role="alert"></div>
+      <button type="submit" id="sendBtn">${copy.submit}</button>
+    </form>`);
+  stage.appendChild(form);
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(form).entries());
+    const answers = { bridesmaid: bm.name, said_yes: true, ...data, submitted_at: new Date().toISOString() };
+    const btn = $("#sendBtn"); btn.disabled = true; btn.textContent = "Sending…";
+    let sent = false;
+    if (SEND_TO) {
+      try {
+        const r = await fetch("https://formsubmit.co/ajax/" + encodeURIComponent(SEND_TO), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ _subject: `💍 ${bm.name} said YES`, _template: "table", _captcha: "false", ...answers }),
+        });
+        sent = r.ok;
+      } catch (_) { sent = false; }
+    }
+    copy.done(stage, bm, answers, sent);
+  });
+}
+
+function summaryCard(answers) {
+  const lines = [
+    `Bridesmaid: ${answers.bridesmaid}`,
+    `Favourite colour: ${answers.favourite_colour}`,
+    `Shoe size: ${answers.shoe_size}`,
+    `Clothing size: ${answers.clothing_size}`,
+    answers.dress_size ? `Dress size: ${answers.dress_size}` : "",
+    ...Object.entries(answers)
+      .filter(([k]) => !["bridesmaid","said_yes","favourite_colour","shoe_size","clothing_size","dress_size","submitted_at"].includes(k))
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`),
+  ].filter(Boolean);
+  const el = document.createElement("div");
+  el.className = "summary";
+  el.textContent = lines.join("\n");
+  return el;
+}
+
+/* ============================================================
+   HANNA — pharmacist, loves llamas
+   ============================================================ */
+function renderHanna(stage, bm) {
+  const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  stage.innerHTML = "";
+  const card = h(`
+    <section class="card" aria-live="polite">
+      <div class="rx-head"><b>℞</b><span>Llama Bride Pharmacy · Refills: ∞</span></div>
+      <span class="llama" aria-hidden="true">🦙</span>
+      <dl class="rx-table">
+        <dt>Patient</dt><dd>Hanna</dd>
+        <dt>Prescriber</dt><dd>Dr. ${BRIDE} (soon-to-be-wed)</dd>
+        <dt>Date</dt><dd>${today}</dd>
+        <dt>Drug</dt><dd>Bridesmaid-ol 100%</dd>
+        <dt>Sig</dt><dd>Take 1 best friend by mouth daily, forever. Do not crush.</dd>
+      </dl>
+      <h1>Hanna, will you be my bridesmaid?</h1>
+      <div class="warning">⚠ May cause happy crying. Do not operate heavy machinery while dancing.</div>
+      <div class="choices">
+        <button id="yesBtn" type="button">Yes, fill it!</button>
+        <button id="noBtn" type="button">No</button>
+      </div>
+      <div class="taunt" id="taunt"></div>
+    </section>`);
+  stage.appendChild(card);
+
+  const yes = $("#yesBtn"), no = $("#noBtn"), taunt = $("#taunt");
+  const lines = [
+    "Contraindicated. Try again.",
+    "Prescription denied. 🦙",
+    "This llama refuses to process your request.",
+    "Side effects of 'No' include: regret.",
+    "Pharmacist's note: patient is being silly.",
+    "The llama is getting spitty…",
+    "Generic 'No' not covered by insurance.",
+    "Okay this button is now out of stock.",
+  ];
+  let tries = 0;
+
+  function dodge(e) {
+    if (e) e.preventDefault();
+    tries++;
+    taunt.textContent = lines[Math.min(tries - 1, lines.length - 1)];
+    // the yes button gets more irresistible
+    yes.style.transform = `scale(${Math.min(1 + tries * 0.12, 1.8)})`;
+    if (tries >= lines.length) {
+      no.textContent = "Yes 🦙";
+      no.classList.remove("loose");
+      no.style.left = no.style.top = "";
+      no.onclick = sayYes;
+      no.removeEventListener("pointerdown", dodge);
+      no.removeEventListener("mouseenter", dodge);
+      return;
+    }
+    // llama spit puff from the button
+    const r = no.getBoundingClientRect();
+    for (let i = 0; i < 6; i++) {
+      const s = document.createElement("span");
+      s.className = "spit"; s.textContent = "💦";
+      s.style.left = r.left + r.width / 2 + "px"; s.style.top = r.top + "px";
+      s.style.setProperty("--dx", (Math.random() * 120 - 60) + "px");
+      s.style.setProperty("--dy", (Math.random() * -90 - 20) + "px");
+      document.body.appendChild(s); setTimeout(() => s.remove(), 800);
+    }
+    // run away
+    no.classList.add("loose");
+    const pad = 16, w = no.offsetWidth, hgt = no.offsetHeight;
+    let x, y, guard = 0;
+    do {
+      x = pad + Math.random() * (innerWidth - w - pad * 2);
+      y = pad + Math.random() * (innerHeight - hgt - pad * 2);
+      guard++;
+    } while (guard < 20 && Math.abs(x - r.left) < 80 && Math.abs(y - r.top) < 80);
+    no.style.left = x + "px"; no.style.top = y + "px";
+    no.style.transform = `scale(${Math.max(1 - tries * 0.09, 0.45)}) rotate(${Math.random() * 30 - 15}deg)`;
+  }
+  no.addEventListener("pointerdown", dodge);
+  no.addEventListener("mouseenter", dodge);
+  no.addEventListener("click", (e) => { if (no.textContent === "No") dodge(e); });
+
+  function sayYes() {
+    no.remove();
+    rain(["🦙", "💊", "💍", "🤍", "💐"], 50);
+    setTimeout(() => questionnaire(stage, bm, {
+      header: `<div class="rx-head"><b>℞</b><span>Fitting form · Rx #001</span></div>`,
+      title: "Prescription filled! 🦙",
+      intro: "Now the pharmacy needs a few details so I can get you dressed for the big day.",
+      extraLabel: "Any allergies? (Asking as a professional)",
+      extraName: "allergies",
+      extraPlaceholder: "e.g. none, shellfish, bad music",
+      submit: "Submit to pharmacy",
+      done: hannaDone,
+    }), 900);
+  }
+  yes.addEventListener("click", sayYes);
+}
+
+function hannaDone(stage, bm, answers, sent) {
+  stage.innerHTML = "";
+  const card = h(`
+    <section class="card">
+      <div class="rx-head"><b>℞</b><span>Order complete</span></div>
+      <span class="llama" aria-hidden="true">🦙💍</span>
+      <h1>You're officially on the prescription, Hanna!</h1>
+      <p id="doneMsg"></p>
+    </section>`);
+  stage.appendChild(card);
+  $("#doneMsg").textContent = sent
+    ? `Your answers went straight to ${BRIDE}. I love you, llama lady.`
+    : `Screenshot this and send it to ${BRIDE} with your sizes!`;
+  if (!sent) card.appendChild(summaryCard(answers));
+  rain(["🦙", "💊", "🤍"], 30);
+}
+</script>
+</body>
+</html>
